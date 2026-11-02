@@ -23,3 +23,21 @@ Source repository: https://github.com/ChrisClutch/Cabinet-Aggregator-Chatgpt. Th
 - Obtain final deployment approval, then deploy the tested artifact. Add rollback, backup/restore and deletion runbooks.
 
 The included `.openai/hosting.json` provides logical DB/BUCKET bindings for the source scaffold. It contains no hosted Site identity; there is no Sites registration or public deployment. For direct Cloudflare deployment, retain the compiled Worker/assets configuration but replace local resource identifiers and bootstrap authentication before running any remote command.
+
+
+## Cloudflare Workers Builds settings
+
+- Build command: `npm run build`
+- Deploy command: `npm run deploy`
+- Node version: 24
+- Keep the committed lockfile and pinned Wrangler. Do not use a bare `npx wrangler deploy`, which can trigger automatic framework setup because this Vite project generates its config under `dist/server`.
+
+Build variables (not runtime secrets):
+- `CF_D1_DATABASE_ID`: UUID of the existing production/staging D1 database.
+- `CF_R2_BUCKET_NAME`: name of the existing R2 bucket.
+- `CF_WORKER_NAME`: exact Worker name in the dashboard; defaults to `cabinet-aggregator-chatgpt`.
+- `CF_D1_DATABASE_NAME`: optional database name.
+
+The deploy script validates resource inputs, preserves the generated module/assets paths, and invokes the locally installed Wrangler. It does not provision resources or apply migrations. Apply `drizzle/0000_cloudy_vertigo.sql` to the intended remote D1 database before serving traffic. Configure the `ADMIN_PASSWORD` runtime secret separately; never put it in source or reuse the local preview password. Keep the production readiness requirements above in effect.
+
+The initial deployment log showed an attempted Wrangler 4.156.1 upgrade conflicting with workers-types 4.20260515.1. Explicit deployment avoids that automatic dependency rewrite; do not suppress dependency errors with `--force` or `--legacy-peer-deps`.
